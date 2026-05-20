@@ -41,8 +41,6 @@ if st.button("🔄 최신 리포트 분석하기"):
     with st.spinner("🌐 네이버 증권에서 오늘 자 리포트를 수집 및 분석하는 중..."):
         try:
             df = get_naver_reports()
-             # 가져온 데이터의 컬럼 이름을 우리가 사용할 이름들로 강제 지정합니다.
-            df.columns = ["작성일", "종목명", "리포트 제목", "증권사", "리포트 URL"] 
             st.success(f"총 {len(df)}개의 최신 리포트를 성공적으로 가져왔습니다!")
             
             # 왼쪽/오른쪽 화면 분할
@@ -60,18 +58,9 @@ if st.button("🔄 최신 리포트 분석하기"):
                         count = len(stock_data)
                         
                         # 평소에는 종목명만 보이고, 누르면 상세 증권사 목록이 펼쳐짐
-                        with st.expander(f"📉 {stock} (총 {count}개 증권사 추천)"):
-                         # enumerate를 쓰면 0, 1, 2 같은 숫자를 순서대로 같이 꺼낼 수 있습니다.
-                            for idx, row in stock_data.iterrows():
-                                # url 변수에 엑셀/데이터프레임의 진짜 링크 컬럼명을 정확히 적어줍니다.
-                                report_url = row['리포트 URL']  # <--- 회원님의 진짜 URL 컬럼명으로 적어주세요!
-        
-                                # key=f"btn_{stock}_{idx}" 처럼 버튼마다 완전히 다른 고유 이름표를 부여합니다.
-                                st.link_button(
-                                    label=f"🔗 [{row['증권사']}] 리포트 바로가기", 
-                                    url=report_url,
-                                    key=f"btn_{stock}_{idx}")
-
+                        with st.expander(f"📈 {stock} (총 {count}개 증권사 추천)"):
+                            for _, row in stock_data.iterrows():
+                                st.link_button(f"🏢 {row['증권사']} 리포트 바로가기", row['링크'], use_container_width=True)
                 else:
                     st.write("현재 중복 추천 종목이 없습니다.")
 

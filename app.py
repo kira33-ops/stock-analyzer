@@ -2,11 +2,12 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import urllib.parse
 
 # 페이지 설정
 st.set_page_config(page_title="증권사 리포트 족집게", layout="centered")
 st.title("🎯 오늘 증권사들이 픽한 핵심 리포트 선별기")
-st.write("네이버 증권의 최신 종목 리포트를 실시간으로 분석합니다.")
+st.write("네이버 증권 리포트를 검색 결과로 안전하게 연결합니다.")
 
 def get_naver_reports():
     report_list = []
@@ -27,18 +28,18 @@ def get_naver_reports():
             title_a = cols[1].find("a")
             if not title_a: continue
             
-            # [최종 수정] 주소를 모바일 전용으로 통일하여 PC/모바일 모두 정상 연결
-            link_path = title_a["href"]
-            if not link_path.startswith("http"):
-                full_link = "https://m.stock.naver.com" + link_path
-            else:
-                full_link = link_path.replace("finance.naver.com", "m.stock.naver.com")
+            # [최종 해결책] 주소를 직접 연결하지 않고 네이버 검색 결과로 생성
+            종목명 = cols[0].get_text(strip=True)
+            증권사 = cols[2].get_text(strip=True)
+            검색어 = f"{종목명} {증권사} 리포트"
+            encoded_query = urllib.parse.quote(검색어)
+            full_link = f"https://search.naver.com/search.naver?query={encoded_query}"
             
             report_list.append({
                 "작성일": cols[4].get_text(strip=True),
-                "종목명": cols[0].get_text(strip=True),
+                "종목명": 종목명,
                 "리포트 제목": title_a.get_text(strip=True),
-                "증권사": cols[2].get_text(strip=True),
+                "증권사": 증권사,
                 "링크": full_link
             })
     return pd.DataFrame(report_list)
@@ -58,8 +59,7 @@ if st.button("🔄 최신 리포트 분석하기"):
                     stock_data = df[df["종목명"] == stock]
                     with st.expander(f"📈 {stock} ({len(stock_data)}개 증권사 추천)"):
                         for _, row in stock_data.iterrows():
-                            # 마크다운 링크로 깔끔하게 연결
-                            st.markdown(f"🔗 [{row['증권사']} 리포트 바로가기]({row['링크']})")
+                            st.markdown(f"🔗 [{row['증권사']} 리포트 찾기]({row['링크']})")
             
             st.markdown("### 🚀 2. [목표주가 상향] 핵심 리포트")
             up_reports = df[df["리포트 제목"].str.contains("상향|올려|우상향|상향조정|목표가|매수|Top pick", case=False, na=False)]
@@ -73,4 +73,4 @@ if st.button("🔄 최신 리포트 분석하기"):
             st.dataframe(df, use_container_width=True)
             
         except Exception as e:
-            st.error("데이터를 가져오는 중 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.")
+            st.error("데이터 수집 중 오류가 발생했습니다.")

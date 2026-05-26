@@ -32,7 +32,7 @@ def get_naver_reports():
                 "종목명": cols[0].get_text(strip=True),
                 "리포트 제목": title_a.get_text(strip=True),
                 "증권사": cols[2].get_text(strip=True),
-                "링크": "https://finance.naver.com/research/" + title_a["href"]
+                "링크": "https://finance.naver.com" + title_a["href"]
             })
     return pd.DataFrame(report_list)
 

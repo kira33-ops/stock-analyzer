@@ -2,12 +2,11 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import urllib.parse
 
 # 페이지 설정
 st.set_page_config(page_title="증권사 리포트 족집게", layout="centered")
 st.title("🎯 오늘 증권사들이 픽한 핵심 리포트 선별기")
-st.write("네이버 증권 리포트를 검색 결과로 안전하게 연결합니다.")
+st.write("네이버 증권의 최신 종목 리포트를 실시간으로 분석합니다.")
 
 def get_naver_reports():
     report_list = []
@@ -28,18 +27,14 @@ def get_naver_reports():
             title_a = cols[1].find("a")
             if not title_a: continue
             
-            # [최종 해결책] 주소를 직접 연결하지 않고 네이버 검색 결과로 생성
-            종목명 = cols[0].get_text(strip=True)
-            증권사 = cols[2].get_text(strip=True)
-            검색어 = f"{종목명} {증권사} 리포트"
-            encoded_query = urllib.parse.quote(검색어)
-            full_link = f"https://search.naver.com/search.naver?query={encoded_query}"
+            # 주소 생성 (공식 상세 페이지 경로)
+            full_link = "https://finance.naver.com" + title_a["href"]
             
             report_list.append({
                 "작성일": cols[4].get_text(strip=True),
-                "종목명": 종목명,
+                "종목명": cols[0].get_text(strip=True),
                 "리포트 제목": title_a.get_text(strip=True),
-                "증권사": 증권사,
+                "증권사": cols[2].get_text(strip=True),
                 "링크": full_link
             })
     return pd.DataFrame(report_list)
@@ -51,6 +46,10 @@ if st.button("🔄 최신 리포트 분석하기"):
             df = get_naver_reports()
             st.success(f"총 {len(df)}개의 리포트를 찾았습니다!")
             
+            # [새 창 열기 방식 적용]
+            def make_link_html(text, link):
+                return f'<a href="{link}" target="_blank" style="text-decoration:none; color:inherit; font-weight:bold;">📄 {text}</a>'
+
             st.markdown("### 🔥 1. 여러 증권사가 동시에 주목한 종목")
             counts = df["종목명"].value_counts()
             hot_stocks = counts[counts > 1].index.tolist()
@@ -59,7 +58,7 @@ if st.button("🔄 최신 리포트 분석하기"):
                     stock_data = df[df["종목명"] == stock]
                     with st.expander(f"📈 {stock} ({len(stock_data)}개 증권사 추천)"):
                         for _, row in stock_data.iterrows():
-                            st.markdown(f"🔗 [{row['증권사']} 리포트 찾기]({row['링크']})")
+                            st.markdown(make_link_html(f"{row['증권사']} 리포트 확인", row['링크']), unsafe_allow_html=True)
             
             st.markdown("### 🚀 2. [목표주가 상향] 핵심 리포트")
             up_reports = df[df["리포트 제목"].str.contains("상향|올려|우상향|상향조정|목표가|매수|Top pick", case=False, na=False)]
@@ -67,7 +66,7 @@ if st.button("🔄 최신 리포트 분석하기"):
                 for _, row in up_reports.iterrows():
                     with st.container(border=True):
                         st.caption(f"{row['증권사']} | {row['작성일']}")
-                        st.markdown(f"⭐ [{row['종목명']}: {row['리포트 제목']}]({row['링크']})")
+                        st.markdown(make_link_html(f"{row['종목명']}: {row['리포트 제목']}", row['링크']), unsafe_allow_html=True)
             
             st.markdown("### 📋 전체 리포트 목록")
             st.dataframe(df, use_container_width=True)

@@ -50,7 +50,6 @@ if st.button("🔄 최신 리포트 분석하기"):
             df = get_naver_reports()
             is_mobile = is_mobile_device()
             
-            # 링크 선택 로직
             def get_target_link(row):
                 return row["검색링크"] if is_mobile else row["링크"]
             
@@ -79,7 +78,6 @@ if st.button("🔄 최신 리포트 분석하기"):
             st.markdown("---")
             st.markdown("### 📋 전체 리포트 목록")
             
-            # 전체 목록 링크 활성화
             df_display = df.copy()
             df_display["상세보기"] = df_display.apply(get_target_link, axis=1)
             
@@ -88,3 +86,11 @@ if st.button("🔄 최신 리포트 분석하기"):
                 use_container_width=True,
                 column_config={
                     "상세보기": st.column_config.LinkColumn(
+                        "리포트 확인", 
+                        display_text="바로가기"
+                    )
+                }
+            )
+            
+        except Exception as e:
+            st.error(f"분석 중 에러가 발생했습니다: {e}")
